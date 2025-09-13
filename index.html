@@ -1,0 +1,295 @@
+Below are **two files** you can drop into a Vercel (or any Node + serverless) project. The browser app never sees your API key.
+
+---
+
+## 1) `index.html`
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="theme-color" content="#0b6" />
+<link rel="manifest" href="data:application/manifest+json,{&quot;name&quot;:&quot;Plan Book (5-Day Cycle)&quot;,&quot;short_name&quot;:&quot;PlanBook&quot;,&quot;start_url&quot;:&quot;.&quot;,&quot;display&quot;:&quot;standalone&quot;,&quot;background_color&quot;:&quot;#ffffff&quot;,&quot;theme_color&quot;:&quot;#0b6&quot;}">
+<title>Plan Book — 5-Day Cycle</title>
+<style>
+:root { --fg:#1f2937; --muted:#6b7280; --bg:#fff; --panel:#f9fafb; --ink:#0b6; --danger:#dc2626; --warn:#f59e0b; --ok:#10b981; --link:#2563eb; font-synthesis-weight:none; }
+*{box-sizing:border-box} html,body{height:100%} body{margin:0;font:14px system-ui,Segoe UI,Roboto,Helvetica,Arial;color:var(--fg);background:var(--bg)}
+header{display:flex;gap:.75rem;align-items:center;justify-content:space-between;padding:.75rem 1rem;border-bottom:1px solid #e5e7eb;background:#fff;position:sticky;top:0;z-index:5}
+h1{font-size:16px;margin:0;font-weight:700}
+small.mono{font-family:ui-monospace,Menlo,Consolas,monospace;color:var(--muted)}
+button,select,input,textarea{font:inherit} button{cursor:pointer}
+.btn{padding:.45rem .7rem;border:1px solid #e5e7eb;border-radius:.5rem;background:#fff}
+.btn.primary{border-color:transparent;background:var(--ink);color:#fff}
+.btn.ghost{background:transparent;border-color:transparent}
+.btn.danger{background:var(--danger);color:#fff;border-color:transparent}
+.toolbar{display:flex;gap:.5rem;flex-wrap:wrap}
+.layout{display:grid;grid-template-columns:280px 1fr;min-height:calc(100% - 56px)}
+aside{border-right:1px solid #e5e7eb;padding:1rem;background:var(--panel)}
+main{padding:1rem 1rem 6rem 1rem}
+.section{margin-bottom:1rem}
+.label{font-weight:600;margin-bottom:.4rem}
+.row{display:flex;gap:.5rem;align-items:center}
+input[type="color"]{width:2.25rem;height:2rem;padding:0;border:1px solid #e5e7eb;border-radius:.35rem}
+input[type="date"], input[type="time"], input[type="number"], select, textarea, input[type="text"]{border:1px solid #e5e7eb;border-radius:.4rem;padding:.35rem .45rem;background:#fff}
+textarea{width:100%;min-height:80px}
+.card{border:1px solid #e5e7eb;border-radius:.75rem;background:#fff;padding:.75rem}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.cell{border:1px solid #e5e7eb;border-radius:.5rem;padding:.4rem;min-height:92px;background:#fff;position:relative}
+.cell .date{font-weight:600}
+.badge{display:inline-flex;align-items:center;gap:.25rem;padding:.15rem .4rem;border-radius:.5rem;background:#eefaf3;color:#065f46;border:1px solid #c9f1dc;font-size:12px}
+.badge.grey{background:#f3f4f6;color:#374151;border-color:#e5e7eb}
+.badge.warn{background:#fff7ed;color:#92400e;border-color:#fed7aa}
+.badge.hol{background:#ecfeff;color:#155e75;border-color:#a5f3fc}
+.badge.pd{background:#fef2f2;color:#991b1b;border-color:#fecaca}
+.badge.rep{background:#f5f3ff;color:#5b21b6;border-color:#ddd6fe}
+.lesson-chip{display:block;padding:.25rem .4rem;margin-top:.25rem;border-left:4px solid;border-radius:.25rem;background:#f9fafb;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:.5rem}
+.kv > div{display:flex;gap:.5rem;align-items:center}
+hr{border:none;border-top:1px solid #eee;margin:.75rem 0}
+.small{color:var(--muted);font-size:12px}
+a{color:var(--link);text-decoration:none} a:hover{text-decoration:underline}
+footer.print{display:none}
+@media print{ header,aside,.noprint{display:none!important} main{padding:0} .cell{min-height:auto;height:auto} footer.print{display:block;font-size:12px;margin-top:8px;color:#444} }
+.dialog{position:fixed;inset:0;background:rgba(0,0,0,.3);display:none;align-items:center;justify-content:center;padding:1rem;z-index:30}
+.dialog .sheet{width:min(820px,95vw);max-height:90vh;overflow:auto;background:#fff;border-radius:.75rem;border:1px solid #e5e7eb;padding:1rem}
+.dialog.show{display:flex}
+.tag{display:inline-block;padding:.1rem .4rem;border-radius:.5rem;background:#eef2ff;border:1px solid #c7d2fe;color:#3730a3;font-size:12px;margin-right:.25rem}
+.flex{display:flex;gap:.5rem;align-items:center} .flex-1{flex:1} .hidden{display:none}
+.code{font-family:ui-monospace,Menlo,Consolas,monospace;background:#f9fafb;border:1px solid #eee;border-radius:.5rem;padding:.25rem .4rem}
+</style>
+</head>
+<body>
+<header>
+  <div class="row"><h1>Plan Book <span class="small">— 5-Day Cycle</span></h1></div>
+  <div class="toolbar noprint">
+    <button class="btn" id="btn-today">Today</button>
+    <button class="btn" id="btn-week">Week</button>
+    <button class="btn" id="btn-month">Month</button>
+    <button class="btn" id="btn-day">Day</button>
+    <button class="btn" id="btn-print">Print</button>
+    <button class="btn" id="btn-export">Export JSON</button>
+    <button class="btn" id="btn-ics">Export ICS</button>
+    <button class="btn primary" id="btn-new-lesson">New Lesson</button>
+    <button class="btn" id="btn-settings">Settings</button>
+  </div>
+</header>
+<div class="layout">
+  <aside>
+    <div class="section">
+      <div class="label">Subjects</div>
+      <div id="subjects"></div>
+      <hr/>
+      <form id="form-subj" class="card">
+        <div class="label">Add subject</div>
+        <div class="row"><input required placeholder="Name (e.g., ELA)" id="subj-name" class="flex-1"/>
+          <input type="color" id="subj-color" value="#0b6"></div>
+        <div class="row"><input type="number" id="subj-duration" value="30" min="5" step="5" style="width:7rem"> <span class="small">min</span></div>
+        <div class="row"><input placeholder="Room (optional)" id="subj-room" class="flex-1"/></div>
+        <div class="row"><button class="btn primary" type="submit">Add</button></div>
+      </form>
+    </div>
+    <div class="section">
+      <div class="label">Filter</div>
+      <select id="filter-subject"><option value="">All subjects</option></select>
+    </div>
+    <div class="section small">
+      <div class="label">Legend</div>
+      <div class="row"><span class="badge">D1–D5</span><span>Cycle day</span></div>
+      <div class="row"><span class="badge hol">Holiday</span><span>H</span></div>
+      <div class="row"><span class="badge pd">PA Day</span><span>EP</span></div>
+      <div class="row"><span class="badge rep">Reporting</span><span>RC</span></div>
+      <div class="row"><span class="badge warn">Turnaround/Other</span><span>ETD</span></div>
+    </div>
+  </aside>
+  <main>
+    <div id="nav" class="row noprint" style="justify-content:space-between;margin-bottom:.5rem">
+      <div class="row"><button class="btn" id="prev">◀</button><button class="btn" id="next">▶</button></div>
+      <div class="row"><strong id="title"></strong> <span id="subtitle" class="small" style="margin-left:.5rem"></span></div>
+      <div class="row"><input type="date" id="jump"/></div>
+    </div>
+    <div id="view"></div>
+    <footer class="print">Printed from Plan Book (5-Day Cycle) — local-first MVP</footer>
+  </main>
+</div>
+<!-- Lesson dialog -->
+<div id="dlg-lesson" class="dialog"><div class="sheet">
+  <form id="form-lesson">
+    <div class="row" style="justify-content:space-between">
+      <h2 style="margin:.25rem 0">Lesson</h2>
+      <div class="row">
+        <button type="button" class="btn" id="ai-draft">Draft with ChatGPT</button>
+        <button type="button" class="btn danger" id="del-lesson">Delete</button>
+        <button type="button" class="btn" onclick="closeLesson()">Close</button>
+      </div>
+    </div>
+    <div class="kv">
+      <div><label class="label">Date</label><input type="date" id="ls-date" required></div>
+      <div><label class="label">Cycle day</label><input readonly id="ls-cycle" class="code"></div>
+      <div><label class="label">Subject</label><select id="ls-subject" required></select></div>
+      <div><label class="label">Duration</label><input type="number" id="ls-duration" min="5" step="5"></div>
+    </div>
+    <div class="kv" style="margin-top:.5rem">
+      <div><label class="label">Title</label><input id="ls-title" placeholder="e.g., Build fluency with digraphs"></div>
+      <div><label class="label">Standards (tags)</label><input id="ls-std" placeholder="e.g., RL.1.2, RF.2.3"></div>
+    </div>
+    <div class="kv" style="margin-top:.5rem">
+      <div><label class="label">Objective</label><textarea id="ls-obj" placeholder="I can…"></textarea></div>
+      <div><label class="label">Materials</label><textarea id="ls-mat" placeholder="Whiteboards, counters…"></textarea></div>
+    </div>
+    <div class="kv" style="margin-top:.5rem">
+      <div><label class="label">Steps</label><textarea id="ls-steps" placeholder="Mini-lesson • Guided • Independent…"></textarea></div>
+      <div><label class="label">Differentiation (G1/G2)</label><textarea id="ls-diff" placeholder="G1… / G2…  ELL supports…"></textarea></div>
+    </div>
+    <div style="margin-top:.5rem"><label class="label">Links</label><input id="ls-links" placeholder="https://… comma-separated"></div>
+    <div class="row" style="margin-top:.75rem;justify-content:flex-end"><button class="btn primary">Save</button></div>
+  </form>
+</div></div>
+<!-- Settings dialog -->
+<div id="dlg-settings" class="dialog"><div class="sheet">
+  <h2 style="margin:.25rem 0">Settings</h2>
+  <div class="kv">
+    <div><label class="label">School year start</label><input type="date" id="set-start"></div>
+    <div><label class="label">School year end</label><input type="date" id="set-end"></div>
+  </div>
+  <div class="row" style="margin-top:.5rem"><label class="label" style="margin-right:.5rem">Cycle length</label><input type="number" id="set-days" min="3" max="10" value="5" style="width:6rem"></div>
+  <div style="margin-top:.5rem">
+    <label class="label">Exceptions (one per line: <span class="code">YYYY-MM-DD,TYPE,Note</span>)</label>
+    <textarea id="set-ex" placeholder="2025-09-01,HOL,Labour Day
+2025-09-26,PD,PA Day
+2025-12-22,HOL,Winter Break begins"></textarea>
+    <div class="small">Types: <span class="tag">HOL</span> holiday/no school, <span class="tag">PD</span> PA day, <span class="tag">REP</span> reporting, <span class="tag">ETD</span> turnaround/other. HOL/PD days don’t advance the cycle. REP/ETD show as badges but still count as school (unless you mark them HOL/PD).</div>
+  </div>
+  <hr/>
+  <div class="kv">
+    <div><label class="label">Model</label><input id="set-model" value="gpt-4o-mini"></div>
+    <div class="small">API key is kept **server-side** in your deployment settings; the browser never sees it.</div>
+  </div>
+  <div class="row" style="margin-top:.75rem;justify-content:flex-end">
+    <button class="btn" onclick="resetAll()">Reset</button>
+    <button class="btn primary" id="save-settings">Save</button>
+  </div>
+</div></div>
+<script>
+// ---- Local state ------------------------------------------------------------
+const S = { subjects: [], lessons: [], settings: { start: "", end: "", daysPerCycle: 5, exceptions: [], model:"gpt-4o-mini" }, ui: { view: "week", cursor: new Date() } };
+const $ = sel => document.querySelector(sel);
+const fmt = d => d.toISOString().slice(0,10);
+const parseDate = s => { const d = new Date(s); if(isNaN(+d)) return null; d.setHours(12); return d; };
+const sameDay = (a,b)=> a.getFullYear()==b.getFullYear() && a.getMonth()==b.getMonth() && a.getDate()==b.getDate();
+const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x;};
+function load(){ try{ const raw=localStorage.getItem("planbook5"); if(raw){ Object.assign(S, JSON.parse(raw)); S.ui.cursor=new Date(S.ui.cursor||Date.now()); } }catch(e){} }
+function save(){ localStorage.setItem("planbook5", JSON.stringify(S)); }
+// ---- Cycle engine -----------------------------------------------------------
+function isSchoolClosed(date){ const e=S.settings.exceptions.find(x=> x.date===fmt(date) && (x.type==="HOL"||x.type==="PD")); return !!e; }
+function dayMeta(date){ return S.settings.exceptions.filter(x=>x.date===fmt(date)); }
+function cycleDay(date){ const {start,end,daysPerCycle}=S.settings; if(!start||!end) return 0; const d0=parseDate(start), d1=parseDate(end); if(date<d0||date>d1) return 0; let cur=d0, n=1; while(isSchoolClosed(cur)) cur=addDays(cur,1); for(let d=cur; d<=date; d=addDays(d,1)){ if(isSchoolClosed(d)) continue; if(sameDay(d,date)) return n; n = n % daysPerCycle + 1; } return 0; }
+// ---- Rendering --------------------------------------------------------------
+function render(){ save(); renderSubjects(); renderFilter(); const v=S.ui.view; if(v==="day") renderDay(); else if(v==="month") renderMonth(); else renderWeek(); $("#title").textContent=titleForView(); $("#subtitle").textContent=subtitleForView(); $("#jump").value=fmt(S.ui.cursor); }
+function titleForView(){ const d=S.ui.cursor; if(S.ui.view==="month") return d.toLocaleString(undefined,{month:"long",year:"numeric"}); if(S.ui.view==="day") return d.toLocaleDateString(undefined,{weekday:"long",month:"short",day:"numeric",year:"numeric"}); const s=startOfWeek(d), e=addDays(s,6); return `${s.toLocaleDateString(undefined,{month:"short",day:"numeric"})} – ${e.toLocaleDateString(undefined,{month:"short",day:"numeric",year:"numeric"})}`; }
+function subtitleForView(){ const cd=cycleDay(S.ui.cursor); return cd?`Cycle Day D${cd}`:""; }
+function startOfWeek(d){ const x=new Date(d); const wd=(x.getDay()+6)%7; x.setDate(x.getDate()-wd); x.setHours(12); return x; }
+function cellBadges(d){ const cd=cycleDay(d); const meta=dayMeta(d); let html = cd?`<span class="badge">D${cd}</span>`:`<span class="badge grey">—</span>`; for(const m of meta){ if(m.type==="HOL") html+=` <span class="badge hol">H</span>`; else if(m.type==="PD") html+=` <span class="badge pd">EP</span>`; else if(m.type==="REP") html+=` <span class="badge rep">RC</span>`; else html+=` <span class="badge warn">ETD</span>`; } return html; }
+function listLessons(date){ const filter=$("#filter-subject").value; return S.lessons.filter(l=> l.date===fmt(date) && (!filter || l.subjectId===filter)).sort((a,b)=> (a.time||"24:00") < (b.time||"24:00") ? -1:1); }
+function renderMonth(){ const root=$("#view"); root.innerHTML=""; const d=new Date(S.ui.cursor); d.setDate(1); const month=d.getMonth(), year=d.getFullYear(); const first=startOfWeek(d); const grid=document.createElement("div"); grid.className="grid"; for(let i=0;i<42;i++){ const day=addDays(first,i); const cell=document.createElement("div"); cell.className="cell"; const inMonth=day.getMonth()===month; cell.style.opacity=inMonth?1:.5; cell.innerHTML=`<div class="row" style="justify-content:space-between"><div class="date">${day.getDate()}</div><div>${cellBadges(day)}</div></div><div id="L-${fmt(day)}"></div>`; cell.onclick=()=>{ S.ui.cursor=day; S.ui.view="day"; render(); }; grid.appendChild(cell); } root.appendChild(grid); for(const l of S.lessons){ const host=document.getElementById(`L-${l.date}`); if(!host) continue; const subj=S.subjects.find(s=>s.id===l.subjectId); const el=document.createElement("div"); el.className="lesson-chip"; el.style.borderLeftColor=subj?.color||"#888"; el.textContent=`${subj?subj.name:""} ${l.title?("— "+l.title):""}`; el.title=(l.time?l.time+" • ":"")+(l.objective||""); el.onclick=(e)=>{ e.stopPropagation(); openLesson(l.id); }; host.appendChild(el); } }
+function renderWeek(){ const root=$("#view"); root.innerHTML=""; const s=startOfWeek(S.ui.cursor); const days=Array.from({length:7},(_,i)=>addDays(s,i)); const grid=document.createElement("div"); grid.className="grid"; for(const day of days){ const cell=document.createElement("div"); cell.className="cell"; cell.innerHTML=`<div class="row" style="justify-content:space-between"><div class="date"><strong>${day.toLocaleDateString(undefined,{weekday:"short"})}</strong> ${day.getDate()}</div><div>${cellBadges(day)}</div></div><div id="L-${fmt(day)}"></div>`; cell.onclick=()=>{ S.ui.cursor=day; S.ui.view="day"; render(); }; grid.appendChild(cell); } root.appendChild(grid); for(const d of days){ for(const l of listLessons(d)){ const subj=S.subjects.find(s=>s.id===l.subjectId); const el=document.createElement("div"); el.className="lesson-chip"; el.style.borderLeftColor=subj?.color||"#888"; el.textContent=`${subj?subj.name:""} ${l.title?("— "+l.title):""}`; el.title=(l.time?l.time+" • ":"")+(l.objective||""); el.onclick=(e)=>{ e.stopPropagation(); openLesson(l.id); }; document.getElementById(`L-${l.date}`).appendChild(el); } } }
+function renderDay(){ const d=S.ui.cursor; const root=$("#view"); root.innerHTML=""; const card=document.createElement("div"); card.className="card"; card.innerHTML=`<div class="row" style="justify-content:space-between"><div><strong>${d.toLocaleDateString(undefined,{weekday:"long",month:"long",day:"numeric",year:"numeric"})}</strong></div><div>${cellBadges(d)}</div></div>`; const list=listLessons(d); if(!list.length) card.innerHTML += `<div class="small" style="margin-top:.5rem">No lessons yet. Click “New Lesson”.</div>`; for(const l of list){ const subj=S.subjects.find(s=>s.id===l.subjectId); const box=document.createElement("div"); box.className="card"; box.style.marginTop=".5rem"; box.innerHTML = `<div class="row" style="justify-content:space-between"><div class="row"><div class="badge" style="border-color:${subj?.color};background:#fff">${subj?subj.name:""}</div><div class="small" style="margin-left:.5rem">${l.time||""} • ${l.duration||subj?.duration||""} min</div></div><button class="btn" data-id="${l.id}">Edit</button></div><div style="margin-top:.35rem"><strong>${l.title||""}</strong></div><div class="small" style="white-space:pre-wrap;margin-top:.25rem">${l.objective||""}</div><div style="white-space:pre-wrap;margin-top:.35rem">${l.steps||""}</div><div class="small" style="white-space:pre-wrap;margin-top:.35rem"><em>Diff:</em> ${l.diff||""}</div><div class="small" style="white-space:pre-wrap;margin-top:.35rem"><em>Materials:</em> ${l.materials||""}</div>`; card.appendChild(box); box.querySelector("button").onclick=()=>openLesson(l.id); } root.appendChild(card); }
+// ---- Subjects ---------------------------------------------------------------
+function renderSubjects(){ const host=$("#subjects"); host.innerHTML=""; for(const s of S.subjects){ const row=document.createElement("div"); row.className="row"; row.style.marginBottom=".35rem"; row.innerHTML=`<span class="badge" style="border-color:${s.color}">■</span><span style="flex:1">${s.name}</span><span class="small">${s.duration}m</span><button class="btn" title="Delete">✕</button>`; row.querySelector("button").onclick=()=>{ S.subjects=S.subjects.filter(x=>x.id!==s.id); S.lessons=S.lessons.filter(l=>l.subjectId!==s.id); render(); }; host.appendChild(row); } }
+function renderFilter(){ const sel=$("#filter-subject"); const cur=sel.value; sel.innerHTML=`<option value="">All subjects</option>`+S.subjects.map(s=>`<option value="${s.id}">${s.name}</option>`).join(""); sel.value=cur||""; const lsSel=$("#ls-subject"); lsSel.innerHTML=S.subjects.map(s=>`<option value="${s.id}">${s.name}</option>`).join(""); }
+// ---- Lessons dialog ---------------------------------------------------------
+let editingId=null; function openLesson(id){ const l=id? S.lessons.find(x=>x.id===id) : null; editingId=id||null; $("#ls-date").value = l? l.date : fmt(S.ui.cursor); $("#ls-subject").value = l? l.subjectId : (S.subjects[0]?.id||""); $("#ls-duration").value = l? (l.duration||"") : ""; $("#ls-title").value = l? (l.title||"") : ""; $("#ls-obj").value = l? (l.objective||"") : ""; $("#ls-steps").value = l? (l.steps||"") : ""; $("#ls-diff").value = l? (l.diff||"") : ""; $("#ls-mat").value = l? (l.materials||"") : ""; $("#ls-links").value = l? (l.links||"") : ""; $("#ls-std").value = l? (l.standards||"") : ""; updateCycleField(); $("#dlg-lesson").classList.add("show"); $("#del-lesson").style.display = l ? "" : "none"; }
+function closeLesson(){ $("#dlg-lesson").classList.remove("show"); }
+function updateCycleField(){ const d=parseDate($("#ls-date").value); $("#ls-cycle").value = d ? "D"+cycleDay(d) : ""; }
+$("#form-lesson").onsubmit=(e)=>{ e.preventDefault(); const l={ id: editingId || crypto.randomUUID(), date: $("#ls-date").value, subjectId: $("#ls-subject").value, duration: +(($("#ls-duration").value||0)) || (S.subjects.find(s=>s.id===$("#ls-subject").value)?.duration || 30), title: $("#ls-title").value.trim(), objective: $("#ls-obj").value.trim(), steps: $("#ls-steps").value.trim(), diff: $("#ls-diff").value.trim(), materials: $("#ls-mat").value.trim(), links: $("#ls-links").value.trim(), standards: $("#ls-std").value.trim() }; if(editingId){ S.lessons=S.lessons.map(x=> x.id===editingId? l : x); } else { S.lessons.push(l); } closeLesson(); render(); };
+$("#del-lesson").onclick=()=>{ if(editingId){ S.lessons=S.lessons.filter(x=>x.id!==editingId); } closeLesson(); render(); }
+$("#ls-date").onchange=updateCycleField;
+// ---- Settings dialog --------------------------------------------------------
+function openSettings(){ $("#set-start").value=S.settings.start||""; $("#set-end").value=S.settings.end||""; $("#set-days").value=S.settings.daysPerCycle||5; $("#set-ex").value=S.settings.exceptions.map(x=>`${x.date},${x.type},${x.note||""}`).join("\n"); $("#set-model").value=S.settings.model||"gpt-4o-mini"; $("#dlg-settings").classList.add("show"); }
+$("#save-settings").onclick=()=>{ S.settings.start=$("#set-start").value; S.settings.end=$("#set-end").value; S.settings.daysPerCycle=+$("#set-days").value||5; S.settings.exceptions=$("#set-ex").value.split("\n").map(l=>l.trim()).filter(Boolean).map(l=>{ const [date,type,...rest]=l.split(","); return {date, type:type?.toUpperCase()?.trim()||"ETD", note: rest.join(",").trim()}; }); S.settings.model=$("#set-model").value.trim()||"gpt-4o-mini"; $("#dlg-settings").classList.remove("show"); render(); };
+function resetAll(){ if(confirm("Clear all data? This cannot be undone.")){ localStorage.removeItem("planbook5"); location.reload(); } }
+// ---- AI Drafting (via serverless proxy) ------------------------------------
+async function aiDraft(){
+  const subj = S.subjects.find(s=>s.id===$("#ls-subject").value)?.name || "Lesson";
+  const dur = $("#ls-duration").value || 30;
+  const date = parseDate($("#ls-date").value);
+  const cd = date ? `Day ${cycleDay(date)}` : "cycle day";
+  const title = $("#ls-title").value || "(you choose a precise, simple title)";
+  const prompt = `Draft a Grade 1–2 ${subj} lesson for ${cd} (${dur} minutes) on the topic in the title.\nInclude an "I can..." objective, 3-step mini-lesson, guided practice, independent work, G1/G2 differentiation, ELL supports, manipulatives (if math/phonics), and a 2-minute exit ticket.\nReturn in compact teacher notes style. Title: ${title}`;
+  try{
+    const rsp = await fetch("/api/chat",{ method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ prompt, model: S.settings.model||"gpt-4o-mini" }) });
+    const text = await rsp.text();
+    if(!rsp.ok){ console.error("AI error", rsp.status, text); alert(`AI error ${rsp.status}: ${text.slice(0,400)}`); return; }
+    const data = JSON.parse(text);
+    const out = data.choices?.[0]?.message?.content?.trim() || "";
+    if(!out){ alert("Empty AI response."); return; }
+    $("#ls-obj").value   = extractSection(out,"Objective")        || $("#ls-obj").value;
+    $("#ls-steps").value = extractSection(out,"Lesson")           || out;
+    $("#ls-diff").value  = extractSection(out,"Differentiation")  || $("#ls-diff").value;
+    $("#ls-mat").value   = extractSection(out,"Materials")        || $("#ls-mat").value;
+  }catch(e){ console.error(e); alert(String(e).slice(0,400)); }
+}
+function extractSection(txt,name){ const r=new RegExp(`${name}\\s*[:\\-]\\s*([\\s\\S]+?)(?=\\n\\s*\\w+\\s*[:\\-]|$)`,`i`); const m=txt.match(r); return m? m[1].trim():""; }
+// ---- Export (JSON + ICS) ---------------------------------------------------
+function exportJSON(){ const blob=new Blob([JSON.stringify(S,null,2)],{type:"application/json"}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="planbook.json"; a.click(); }
+function exportICS(){ const lines=["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//PlanBook//EN"]; for(const l of S.lessons){ const dt=l.date.replace(/-/g,"")+"T090000"; const uid=l.id+"@planbook"; const subj=S.subjects.find(s=>s.id===l.subjectId)?.name||"Lesson"; const title=(l.title?`${subj}: ${l.title}`:subj).replace(/\n/g," "); lines.push("BEGIN:VEVENT","UID:"+uid,"DTSTAMP:"+dt,"DTSTART:"+dt,"SUMMARY:"+title,"END:VEVENT"); } lines.push("END:VCALENDAR"); const blob=new Blob([lines.join("\r\n")],{type:"text/calendar"}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="planbook.ics"; a.click(); }
+// ---- Wiring & init ----------------------------------------------------------
+load(); if(!S.settings.start){ const y=new Date().getFullYear(); S.settings.start=`${y}-09-02`; S.settings.end=`${y+1}-06-25`; }
+$("#btn-week").onclick=()=>{S.ui.view="week";render();}; $("#btn-month").onclick=()=>{S.ui.view="month";render();}; $("#btn-day").onclick=()=>{S.ui.view="day";render();}; $("#btn-today").onclick=()=>{S.ui.cursor=new Date();render();};
+$("#prev").onclick=()=>{ S.ui.cursor = S.ui.view==="month" ? addDays(new Date(S.ui.cursor.setDate(1)), -1) : addDays(S.ui.cursor, S.ui.view==="day"?-1:-7); render(); };
+$("#next").onclick=()=>{ S.ui.cursor = S.ui.view==="month" ? addDays(new Date(S.ui.cursor.setDate(28)), 4) : addDays(S.ui.cursor, S.ui.view==="day"?1:7); render(); };
+$("#jump").onchange=(e)=>{ S.ui.cursor=parseDate(e.target.value); render(); };
+$("#btn-print").onclick=()=>window.print(); $("#btn-export").onclick=exportJSON; $("#btn-ics").onclick=exportICS; $("#btn-settings").onclick=openSettings; $("#btn-new-lesson").onclick=()=>openLesson(); $("#ai-draft").onclick=aiDraft; $("#form-subj").onsubmit=(e)=>{ e.preventDefault(); const s={ id:crypto.randomUUID(), name:$("#subj-name").value.trim(), color:$("#subj-color").value, duration:+$("#subj-duration").value||30, room:$("#subj-room").value.trim() }; S.subjects.push(s); $("#subj-name").value=""; $("#subj-room").value=""; render(); }; $("#filter-subject").onchange=render; render();
+// Offline cache
+if('serviceWorker' in navigator){ const sw = URL.createObjectURL(new Blob([`self.addEventListener('install',e=>{e.waitUntil(caches.open('pb').then(c=>c.addAll(['./'])));self.skipWaiting();}); self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)));});`],{type:'text/javascript'})); navigator.serviceWorker.register(sw); }
+</script>
+</body>
+</html>
+```
+
+---
+
+## 2) `api/chat.js` (Vercel Serverless Function)
+
+```js
+// /api/chat.js
+export default async function handler(req, res) {
+  if (req.method !== "POST") return res.status(405).end();
+  try {
+    const { prompt, model = "gpt-4o-mini" } = req.body || {};
+    if (!prompt) return res.status(400).json({ error: "Missing prompt" });
+
+    const rsp = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify({
+        model,
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.7,
+      }),
+    });
+
+    const data = await rsp.json();
+    if (!rsp.ok) return res.status(rsp.status).json(data);
+    return res.status(200).json(data);
+  } catch (e) {
+    return res.status(500).json({ error: String(e) });
+  }
+}
+```
+
+---
+
+## Deploy (Vercel quick steps)
+
+1. **New Project → Framework Preset: “Other”**. Add these two files.
+2. In **Project Settings → Environment Variables**, add:
+
+   * `OPENAI_API_KEY` = *your actual key* (rotate the one you posted earlier; don’t expose it in the client!).
+3. **Deploy**. Open the site → `index.html` loads as the app. The **Draft with ChatGPT** button now calls your `/api/chat` and fills the lesson.
+
+> Optional: If you deploy elsewhere (Netlify/Cloudflare), rename the function as needed (Netlify `netlify/functions/chat.js`, Cloudflare Workers with `fetch` handler). The browser code stays the same—still calls `/api/chat`.
