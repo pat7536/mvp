@@ -242,7 +242,16 @@ async function aiDraft(){
   const date = parseDate($("#ls-date").value);
   const cd = date ? `Day ${cycleDay(date)}` : "cycle day";
   const title = $("#ls-title").value || "(you choose a precise, simple title)";
-  const prompt = `Draft a Grade 1–2 ${subj} lesson for ${cd} (${dur} minutes) on the topic in the title.\nInclude an "I can..." objective, 3-step mini-lesson, guided practice, independent work, G1/G2 differentiation, ELL supports, manipulatives (if math/phonics), and a 2-minute exit ticket.\nReturn in compact teacher notes style. Title: ${title}`;
+  
+  let prompt = `Draft a Grade 1–2 ${subj} lesson for ${cd} (${dur} minutes) on the topic in the title.\nInclude an "I can..." objective, 3-step mini-lesson, guided practice, independent work, G1/G2 differentiation, ELL supports, manipulatives (if math/phonics), and a 2-minute exit ticket.\nReturn in compact teacher notes style.`;
+  
+  // Add SCDSB curriculum context for Math subjects
+  if(subj && subj.toLowerCase().includes('math')){
+    prompt += `\n\nUse SCDSB (Simcoe County District School Board) Ontario curriculum expectations. For the first 20 days of math, focus on:\n\nGrade 1 priorities: Number sense to 20, counting patterns, simple addition/subtraction within 10, comparing quantities, sorting/patterning, basic geometry (2D shapes), measurement concepts (longer/shorter).\n\nGrade 2 priorities: Number sense to 100, counting by 2s/5s/10s, addition/subtraction to 20, place value (tens/ones), money concepts, 2D/3D shapes, measurement tools, simple data collection.\n\nEmphasize hands-on learning, concrete manipulatives, visual representations, and building conceptual understanding before procedural fluency.`;
+  }
+  
+  prompt += `\n\nTitle: ${title}`;
+  
   try{
     const rsp = await fetch("/api/chat",{ method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ prompt, model: S.settings.model||"gpt-4o-mini" }) });
     const text = await rsp.text();
@@ -257,7 +266,20 @@ async function aiDraft(){
   }catch(e){ console.error(e); alert(String(e).slice(0,400)); }
 }
 function extractSection(txt,name){ const r=new RegExp(`${name}\\s*[:\\-]\\s*([\\s\\S]+?)(?=\\n\\s*\\w+\\s*[:\\-]|$)`,`i`); const m=txt.match(r); return m? m[1].trim():""; }
-async function aiShortcut(type){ const subj = S.subjects.find(s=>s.id===$("#ls-subject").value)?.name || "the subject"; const title = $("#ls-title").value || "this lesson"; const objective = $("#ls-obj").value || "the lesson objective"; let prompt = ""; switch(type){ case "diff": prompt = `Create differentiation strategies for ${subj} lesson "${title}" with objective: ${objective}. Provide specific adaptations for: 1) Below grade level (G1), 2) Above grade level (G2), 3) ELL supports. Format as teacher notes.`; break; case "centers": prompt = `Design 4-5 learning centers for ${subj} lesson "${title}" with objective: ${objective}. Include materials, instructions, and time estimates. Focus on hands-on activities.`; break; case "assess": prompt = `Create assessment ideas for ${subj} lesson "${title}" with objective: ${objective}. Include: 1) Formative assessment during lesson, 2) Exit ticket (2-3 questions), 3) Follow-up activities. Keep it practical.`; break; } if(!prompt) return; try{ const rsp = await fetch("/api/chat",{ method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ prompt, model: S.settings.model||"gpt-4o-mini" }) }); const text = await rsp.text(); if(!rsp.ok){ console.error("AI error", rsp.status, text); alert(`AI error ${rsp.status}: ${text.slice(0,400)}`); return; } const data = JSON.parse(text); const out = data.choices?.[0]?.message?.content?.trim() || ""; if(!out){ alert("Empty AI response."); return; } if(type === "diff"){ $("#ls-diff").value = out; } else { const field = type === "centers" ? "#ls-steps" : "#ls-mat"; $(field).value = ($(field).value ? $(field).value + "\n\n" : "") + out; } }catch(e){ console.error(e); alert(String(e).slice(0,400)); } }
+async function aiShortcut(type){ const subj = S.subjects.find(s=>s.id===$("#ls-subject").value)?.name || "the subject"; const title = $("#ls-title").value || "this lesson"; const objective = $("#ls-obj").value || "the lesson objective"; let prompt = ""; 
+  switch(type){ 
+    case "diff": prompt = `Create differentiation strategies for ${subj} lesson "${title}" with objective: ${objective}. Provide specific adaptations for: 1) Below grade level (G1), 2) Above grade level (G2), 3) ELL supports. Format as teacher notes.`; break; 
+    case "centers": prompt = `Design 4-5 learning centers for ${subj} lesson "${title}" with objective: ${objective}. Include materials, instructions, and time estimates. Focus on hands-on activities.`; break; 
+    case "assess": prompt = `Create assessment ideas for ${subj} lesson "${title}" with objective: ${objective}. Include: 1) Formative assessment during lesson, 2) Exit ticket (2-3 questions), 3) Follow-up activities. Keep it practical.`; break; 
+  } 
+  
+  // Add SCDSB math context for relevant subjects
+  if(subj && subj.toLowerCase().includes('math')){
+    const mathContext = `\n\nFor SCDSB Grade 1-2 math, use concrete manipulatives (counters, base-10 blocks, pattern blocks), visual models, and gradual progression from concrete to abstract. Focus on conceptual understanding over procedural memorization.`;
+    prompt += mathContext;
+  }
+  
+  if(!prompt) return; try{ const rsp = await fetch("/api/chat",{ method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ prompt, model: S.settings.model||"gpt-4o-mini" }) }); const text = await rsp.text(); if(!rsp.ok){ console.error("AI error", rsp.status, text); alert(`AI error ${rsp.status}: ${text.slice(0,400)}`); return; } const data = JSON.parse(text); const out = data.choices?.[0]?.message?.content?.trim() || ""; if(!out){ alert("Empty AI response."); return; } if(type === "diff"){ $("#ls-diff").value = out; } else { const field = type === "centers" ? "#ls-steps" : "#ls-mat"; $(field).value = ($(field).value ? $(field).value + "\n\n" : "") + out; } }catch(e){ console.error(e); alert(String(e).slice(0,400)); } }
 // ---- Export (JSON + ICS) ---------------------------------------------------
 function exportJSON(){ const blob=new Blob([JSON.stringify(S,null,2)],{type:"application/json"}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="planbook.json"; a.click(); }
 function importJSON(){ $("#file-import").click(); }

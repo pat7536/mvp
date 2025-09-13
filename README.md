@@ -12,9 +12,11 @@ A comprehensive lesson planning app designed for 5-day cycle schools, featuring 
 - **Templates** - Save and reuse recurring lesson structures
 
 ### AI Integration
-- **ChatGPT lesson drafting** - Full lesson generation
+- **ChatGPT lesson drafting** - Full lesson generation with SCDSB curriculum alignment
 - **AI shortcuts** for differentiation, learning centers, and assessment ideas
+- **SCDSB Math Focus** - Automatically includes "First 20 Days of Math" priorities for Grade 1-2
 - Contextual prompts using lesson subject, title, and objectives
+- Ontario curriculum expectations and hands-on learning emphasis
 
 ### Data Management
 - **Export/Import JSON** - Backup and restore all data
@@ -59,6 +61,29 @@ Navigate to `http://localhost:3000` - API available at `/api/chat`
 ├── README.md
 └── .gitignore
 ```
+
+## SCDSB Curriculum Integration
+
+The AI features automatically incorporate **Simcoe County District School Board** "First 20 Days of Math" resources:
+
+### Grade 1 Math Priorities
+- Number sense to 20, counting patterns
+- Simple addition/subtraction within 10  
+- Comparing quantities, sorting/patterning
+- Basic geometry (2D shapes)
+- Measurement concepts (longer/shorter)
+
+### Grade 2 Math Priorities  
+- Number sense to 100, counting by 2s/5s/10s
+- Addition/subtraction to 20, place value (tens/ones)
+- Money concepts, 2D/3D shapes
+- Measurement tools, simple data collection
+
+When creating Math lessons, the AI automatically emphasizes:
+- Hands-on learning with concrete manipulatives
+- Visual representations and models
+- Building conceptual understanding before procedural fluency
+- Gradual progression from concrete to abstract thinking
 
 ## Technical Details
 - **Single-file app** - All CSS/JS embedded in `index.html`
